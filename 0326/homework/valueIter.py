@@ -1,31 +1,33 @@
 from collections import defaultdict
 from gridworld import GridWorld
-#from homework.gridworld import GridWorld
+from policyIter import greedyPolicy, policyIter
 
-def eval_onestep(pi, V, env, gamma = 0.9):
+
+def value_iter_onestep(V, env, gamma):
     for state in env.states():
         if state == env.goal_state:
             V[state] = 0
             continue
-
-        action_probs = pi[state]
-        new_V = 0
-
-        for action,action_prob in action_probs.items():
+            
+        action_values = []
+        for action in env.actions():
             next_state = env.next_state(state, action)
             r = env.reward(state, action, next_state)
+            value = r + gamma * V[next_state]
+            action_values.append(value)
             
-            new_V += action_prob * ( r+ gamma * V[next_state])
-            
-        V[state] = new_V
+        V[state] = max(action_values)
     return V
     
-def policyEval(pi, V, env, gamma, threshold = 0.001):
+def value_iter(V, env, gamma, threshold = 0.001, is_render = True):
     while True:
+        if is_render:
+            env.render_v(V)
         old_V = V.copy()
-        V = eval_onestep(pi, V, env, gamma)
+        V = value_iter_onestep(V, env, gamma)
         
         delta = 0
+        
         for state in V.keys():
             t = abs(V[state] - old_V[state])
             if delta < t:
@@ -35,13 +37,14 @@ def policyEval(pi, V, env, gamma, threshold = 0.001):
             break
     return V
     
+
+    
 if __name__ == '__main__':
+    V = defaultdict(lambda: 0)
     env = GridWorld()
     gamma = 0.9
     
-    pi = defaultdict(lambda: {0: 0.25, 1:0.25, 2:0.25, 3:0.25})
-    V = defaultdict(lambda: 0)
+    V = value_iter(V, env, gamma)
     
-    V = policyEval(pi, V, env, gamma)
-    
+    pi = policyIter(env, gamma)
     env.render_v(V, pi)

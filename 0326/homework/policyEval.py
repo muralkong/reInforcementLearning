@@ -8,13 +8,19 @@ def eval_onestep(pi, V, env, gamma = 0.9):
             V[state] = 0
             continue
 
+        if env.reward_map[state] is None:
+            continue
+
         action_probs = pi[state]
         new_V = 0
 
         for action,action_prob in action_probs.items():
             next_state = env.next_state(state, action)
             r = env.reward(state, action, next_state)
-            
+
+            if r is None:
+                r = 0.0
+
             new_V += action_prob * ( r+ gamma * V[next_state])
             
         V[state] = new_V
